@@ -15,16 +15,48 @@
 <body>
     <script src="../js/three.min.js"></script>
     <script src="../threeJs/examples/js/Detector.js"></script>
-   
+     <script src="../threeJs/examples/js/renderers/CSS3DRenderer.js"></script>
+ 
+    
     <script>
-        window.requestAnimFrame = (function(){
-  return  window.requestAnimationFrame       ||
-          window.webkitRequestAnimationFrame ||
-          window.mozRequestAnimationFrame    ||
-          function( callback ){
-            window.setTimeout(callback, 1000 / 60);
-          };
+
+        
+        
+// requestAnimationFrame implementation as a custom function to allow blacklisting
+// devices with broken implementation. Currently needs timer-based fallbacks for iOS 6.x for
+// code running inside <iframe> elements.
+// Uses polyfills based on http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+(function() {
+ 
+    var blacklisted   = /iP(ad|hone|od).*OS 6/.test(window.navigator.userAgent),
+        lastTime      = 0,
+        nativeRequest = window.requestAnimationFrame || null,
+        nativeCancel  = window.cancelAnimationFrame  || null;
+ 
+    ['webkit', 'moz'].forEach(function(prefix) {
+        nativeRequest = nativeRequest || window[prefix+'RequestAnimationFrame'] || null;
+        nativeCancel  = nativeCancel  || window[prefix+'CancelAnimationFrame']  || window[prefix+'CancelRequestAnimationFrame'] || null;
+    });
+ 
+    function polyfillRequest(callback, element) {
+        var currTime = new Date().getTime();
+        var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+        var id = window.setTimeout(function() { callback(currTime + timeToCall); }, timeToCall);
+        lastTime = currTime + timeToCall;
+        return id;
+    }
+ 
+    function polyfillCancel(id) {
+        clearTimeout(id);
+    }
+ 
+    this.nextFrame   = (!blacklisted && nativeRequest != null) ? nativeRequest : polyfillRequest;
+    this.cancelFrame = (!blacklisted && nativeCancel  != null) ? nativeCancel  : polyfillCancel;
+ 
 })();
+        
+        
+        
         
         //http://localhost:8080/glbase/three/mystep/001.html
         var scene = new THREE.Scene();
@@ -43,10 +75,13 @@
 //	renderer = new THREE.CanvasRenderer();
         
        // renderer = new THREE.CanvasRenderer();
-        renderer = Detector.webgl? new THREE.WebGLRenderer(): new THREE.CanvasRenderer();
+    // renderer = Detector.webgl? new THREE.WebGLRenderer(): new THREE.CanvasRenderer();
+       // renderer = new THREE.SVGRenderer();
+        	renderer = new THREE.WebGLRenderer();
+        //var renderer = new THREE.CanvasRenderer();
         
-        //	renderer = new THREE.WebGLRenderer();
-        //var renderer = new THREE.SVGRenderer();
+     //    renderer = new THREE.CSS3DRenderer();
+         
         camera.position.x = 100;
         camera.position.y = 20;
         camera.position.z = 50;
